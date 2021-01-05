@@ -1,4 +1,4 @@
-set(GDKMM_LIBRARY_NAME GDKMM-3.0)
+set(GDKMM_LIBRARY_NAME gdkmm-3.0)
 
 find_package(PkgConfig)
 if (PKG_CONFIG_FOUND)
