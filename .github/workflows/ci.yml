@@ -1,0 +1,117 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  windows:
+    name: windows-${{ matrix.buildtype }}
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        buildtype: [Debug, RelWithDebInfo]
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          submodules: true
+
+      - name: Fetch CMake
+        uses: lukka/get-cmake@latest
+
+      - name: Fetch dependencies
+        uses: lukka/run-vcpkg@main
+        with:
+          vcpkgArguments: gtkmm
+          vcpkgDirectory: ${{ github.workspace }}/ci/vcpkg/
+          vcpkgTriplet: x64-windows
+
+      - name: Build
+        uses: lukka/run-cmake@main
+        with:
+          useVcpkgToolchainFile: true
+          vcpkgTriplet: x64-windows
+          buildDirectory: ${{ runner.workspace }}/build
+          cmakeBuildType: ${{ matrix.buildtype }}
+
+      - name: Setup artifact files
+        shell: cmd
+        run: |
+          del /f /s /q "${{ runner.workspace }}\build\CMakeFiles"
+          rmdir /s /q "${{ runner.workspace }}\build\CMakeFiles"
+          del /f /s /q "${{ runner.workspace }}\build\.ninja_deps"
+          del /f /s /q "${{ runner.workspace }}\build\.ninja_log"
+          del /f /s /q "${{ runner.workspace }}\build\gtk-ci-test.ilk"
+          del /f /s /q "${{ runner.workspace }}\build\CMakeCache.txt"
+          copy "${{ github.workspace }}\ci\vcpkg\installed\x64-windows\tools\glib\gspawn-win64-helper.exe" "${{ runner.workspace }}\build\gspawn-win64-helper.exe"
+          copy "${{ github.workspace }}\ci\vcpkg\installed\x64-windows\tools\glib\gspawn-win64-helper-console.exe" "${{ runner.workspace }}\build\gspawn-win64-helper-console.exe"
+
+      - name: Upload build
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-windows-${{ matrix.buildtype }}
+          path: ${{ runner.workspace }}/build
+  mac:
+    name: macos-${{ matrix.buildtype }}
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        buildtype: [Debug, RelWithDebInfo]
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          submodules: true
+
+      - name: Fetch CMake
+        uses: lukka/get-cmake@latest
+
+      - name: Fetch dependencies
+        run: |
+          brew install gtkmm3
+
+      - name: Build
+        uses: lukka/run-cmake@main
+        with:
+          buildDirectory: ${{ runner.workspace }}/build
+          cmakeBuildType: ${{ matrix.buildtype }}
+
+      - name: Setup artifact files
+        run: |
+          mkdir "${{ runner.workspace }}/artifactdir"
+          cp "${{runner.workspace}}/build/gtk-ci-test" "${{ runner.workspace }}/artifactdir/gtk-ci-test"
+
+      - name: Upload build
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-macos-${{ matrix.buildtype }}
+          path: ${{ runner.workspace }}/artifactdir
+
+  linux:
+    name: linux-${{ matrix.buildtype }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        buildtype: [Debug, RelWithDebInfo]
+    steps:
+      - uses: actions/checkout@v1
+        with:
+          submodules: true
+
+      - name: Fetch CMake
+        uses: lukka/get-cmake@latest
+
+      - name: Fetch dependencies
+        run: |
+          sudo apt-get install libgtkmm-3.0-dev
+      
+      - name: Build
+        uses: lukka/run-cmake@main
+        with:
+          buildDirectory: ${{ runner.workspace }}/build
+          cmakeBuildType: ${{ matrix.buildtype }}
+
+      - name: Upload build
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-linux-${{ matrix.buildtype }}
+          path: ${{ runner.workspace }}/build
