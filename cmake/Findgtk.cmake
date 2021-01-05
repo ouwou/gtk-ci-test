@@ -1,5 +1,4 @@
 set(GTK_LIBRARY_NAME   gtk-3.0)
-set(GTK_LIBRARY_FILE   gtk-3.0)
 set(GTK_PKGCONFIG_NAME gtk+-3.0)
 
 find_package(glib REQUIRED)
@@ -36,10 +35,14 @@ find_path(GTK_INCLUDE_DIR
 
 find_library(GTK_LIBRARY
              NAMES ${GTK_LIBRARY_FILE}
+                   ${GTK_PKGCONFIG_NAME}
              HINTS ${GTK_LIBRARY_HINTS}
                    /usr/lib
                    /usr/local/lib
-                   /opt/local/lib)
+                   /opt/local/lib
+             PATH_SUFFIXES
+                   ${GTK_LIBRARY_NAME}
+                   ${GTK_PKGCONFIG_NAME})
 
 set(GTK_LIBRARIES    ${GTK_LIBRARY};${GDKPIXBUF_LIBRARIES})
 set(GTK_INCLUDE_DIRS ${GTK_INCLUDE_DIR};${GDK_CONFIG_INCLUDE_DIR};${GDKPIXBUF_INCLUDE_DIRS})
